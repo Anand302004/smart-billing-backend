@@ -10,7 +10,7 @@ exports.verifyToken = (req, res, next) => {
   const token = authHeader.split(" ")[1]; // Bearer TOKEN
 
   try {
-    const decoded = jwt.verify(token, process.env.JWt_Secret); //1 object return yeto
+    const decoded = jwt.verify(token, process.env.JWT_SECRET); //1 object return yeto
     req.user = decoded; // user info attach
     next(); //Middleware complete → पुढच्या middleware किंवा route handler कडे request पाठवतो
   } catch (err) {
