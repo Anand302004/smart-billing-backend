@@ -1,26 +1,36 @@
 const jwt = require("jsonwebtoken");
 
+/* ================= VERIFY TOKEN ================= */
 exports.verifyToken = (req, res, next) => {
-  const authHeader = req.headers.authorization; 
+  const authHeader = req.headers.authorization;
 
-  if (!authHeader) {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ message: "Token missing" });
   }
 
-  const token = authHeader.split(" ")[1]; // Bearer TOKEN
+  const token = authHeader.split(" ")[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET); //1 object return yeto
-    req.user = decoded; // user info attach
-    next(); //Middleware complete → पुढच्या middleware किंवा route handler कडे request पाठवतो
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded; // { id, email, role }
+    next();
   } catch (err) {
-    res.status(401).json({ message: "Invalid token" }); //Response तयार करून client ला पाठवतो, request end होतो
+    return res.status(401).json({ message: "Invalid token" });
   }
 };
 
-exports.sendReq =  (req, res) => {
+/* ================= ADMIN CHECK ================= */
+exports.isAdmin = (req, res, next) => {
+  if (!req.user || req.user.role !== "admin") {
+    return res.status(403).json({ message: "Admin access only" });
+  }
+  next();
+};
+
+/* ================= TEST PROFILE ================= */
+exports.sendReq = (req, res) => {
   res.json({
     message: "Welcome to profile",
-    user: req.user
+    user: req.user,
   });
-}
+};

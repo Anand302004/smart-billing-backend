@@ -1,65 +1,81 @@
 const pool = require("../db");
 const bcrypt = require("bcrypt");
-const jwt = require('jsonwebtoken')
+const jwt = require("jsonwebtoken");
 
+/* ================= SIGNUP ================= */
 const signup = async (req, res) => {
   try {
-    const { first_name, last_name, email, password } = req.body;
+    const { name, email, password, role } = req.body;
 
-    //Password Convert to Hash Password
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "All fields required" });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const result = await pool.query(
-      "INSERT INTO users (first_name, last_name, email, user_password) VALUES ($1,$2,$3,$4) RETURNING *",
-      [first_name, last_name, email, hashedPassword]
+      `INSERT INTO users (name, email, password, role)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, name, email, role`,
+      [name, email, hashedPassword, role || "user"]
     );
 
-    res.json(result.rows[0]);
-
+    res.status(201).json(result.rows[0]);
   } catch (error) {
-
-    // duplicate key error
-     if (error.code === "23505") { 
-    return res.status(400).json({ message: "Email already exists" });
-  }
-
+    if (error.code === "23505") {
+      return res.status(400).json({ message: "Email already exists" });
+    }
     res.status(500).json({ message: error.message });
   }
 };
 
-const login = async (req, res)=>{
-  const {email, password}=req.body
+/* ================= LOGIN ================= */
+const login = async (req, res) => {
+  const { email, password } = req.body;
 
-  const result= await pool.query(
-    "SELECT * FROM users WHERE email =$1",
+  const result = await pool.query(
+    "SELECT * FROM users WHERE email = $1",
     [email]
   );
 
-  if(result.rows.length === 0){
-    return res.status(404).json({massage:"User Not Found"})
+  if (result.rows.length === 0) {
+    return res.status(404).json({ message: "User not found" });
   }
 
-  const user=result.rows[0]
+  const user = result.rows[0];
 
-  //Hash Password Compare to User password
-    const ismatch= await bcrypt.compare(password, user.user_password)
-    if(!ismatch){
-      return res.status(401).json({massage:'Wrong Password'})
-    }
+  if (!user.is_active) {
+    return res.status(403).json({ message: "Account is deactivated" });
+  }
 
-    //JWT Token Create
-    const token= jwt.sign(
-      {id:user.id, email:user.email},
-      process.env.JWT_SECRET,
-      {expiresIn: '1h'} //expire in 1 Hour
-    )
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    return res.status(401).json({ message: "Wrong password" });
+  }
 
-    res.json({
-      message:'Login Successful',
-      token
-    });
-}
+  const token = jwt.sign(
+    {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "1h" }
+  );
 
+  res.json({
+    message: "Login successful",
+    token,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    },
+  });
+};
+
+/* ================= DELETE USER ================= */
 const deleteUser = async (req, res) => {
   const { email, password } = req.body;
 
@@ -71,15 +87,15 @@ const deleteUser = async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ message: "User Not Exist" });
+      return res.status(404).json({ message: "User not found" });
     }
 
     const user = result.rows[0];
 
-    // 2️⃣ Password match check
-    const isMatch = await bcrypt.compare(password, user.user_password);
+    // 2️⃣ Verify password
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: "Wrong Password" });
+      return res.status(401).json({ message: "Wrong password" });
     }
 
     // 3️⃣ Delete user
@@ -92,75 +108,71 @@ const deleteUser = async (req, res) => {
       return res.status(400).json({ message: "Unable to delete user" });
     }
 
-    res.json({ message: "User Deleted Successfully" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Something Went Wrong" });
+    return res.json({ message: "User deleted successfully" });
+
+  } catch (error) {
+    console.error("Delete user error:", error);
+    return res.status(500).json({ message: "Something went wrong" });
   }
 };
 
+
+/* ================= GET ALL USERS (ADMIN) ================= */
 const getAllUsers = async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, first_name, last_name, email FROM users"
+      "SELECT id, name, email, role, is_active, created_at FROM users"
     );
 
-    res.status(200).json({
+    res.json({
       count: result.rows.length,
-      users: result.rows
+      users: result.rows,
     });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: "Failed to fetch users" });
   }
 };
 
+/* ================= UPDATE USER ================= */
 const updateUsers = async (req, res) => {
-  const { first_name, last_name, password } = req.body;
+  const { username, password } = req.body;
   const userId = req.user?.id;
 
-  if (!first_name && !last_name && !password) {
-  return res.status(400).json({ message: "Nothing to update" });
+  if (!username && !password) {
+    return res.status(400).json({ message: "Nothing to update" });
   }
 
-  if (!userId) {
-    return res.status(401).json({ message: "Unauthorized" });
+  let hashedPassword = null;
+  if (password) {
+    hashedPassword = await bcrypt.hash(password, 10);
   }
 
-  try {
-    let hashedPassword = null;
+  const result = await pool.query(
+    `
+    UPDATE users
+    SET 
+      name = COALESCE($1, name),
+      password = COALESCE($2, password)
+    WHERE id = $3
+    RETURNING id, name, email, role
+    `,
+    [username, hashedPassword, userId]
+  );
 
-    if (password) {
-      hashedPassword = await bcrypt.hash(password, 10);
-    }
-
-    const result = await pool.query(
-      `
-      UPDATE users
-      SET 
-        first_name = COALESCE($1, first_name),
-        last_name  = COALESCE($2, last_name),
-        user_password = COALESCE($3, user_password)
-      WHERE id = $4
-      RETURNING id, first_name, last_name, email
-      `,
-      [first_name, last_name, hashedPassword, userId]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "User Not Found" });
-    }
-
-    res.json({
-      message: "User updated successfully",
-      user: result.rows[0],
-    });
-
-  } catch (error) {
-    console.error("Update User Error:", error);
-    res.status(500).json({ message: "Update failed" });
+  if (result.rows.length === 0) {
+    return res.status(404).json({ message: "User not found" });
   }
+
+  res.json({
+    message: "User updated successfully",
+    user: result.rows[0],
+  });
 };
 
-
-module.exports = { signup,login,deleteUser,getAllUsers, updateUsers };
+module.exports = {
+  signup,
+  login,
+  deleteUser,
+  getAllUsers,
+  updateUsers,
+};
