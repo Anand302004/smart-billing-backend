@@ -1,9 +1,9 @@
-const pool = require("../db");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
+import pool from "../db.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 /* ================= SIGNUP ================= */
-const signup = async (req, res) => {
+ export const signup = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
@@ -30,7 +30,7 @@ const signup = async (req, res) => {
 };
 
 /* ================= LOGIN ================= */
-const login = async (req, res) => {
+export const login = async (req, res) => {
   const { email, password } = req.body;
 
   const result = await pool.query(
@@ -76,7 +76,7 @@ const login = async (req, res) => {
 };
 
 /* ================= DELETE USER ================= */
-const deleteUser = async (req, res) => {
+export const deleteUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
@@ -118,7 +118,7 @@ const deleteUser = async (req, res) => {
 
 
 /* ================= GET ALL USERS (ADMIN) ================= */
-const getAllUsers = async (req, res) => {
+export const getAllUsers = async (req, res) => {
   try {
     const result = await pool.query(
       "SELECT id, name, email, role, is_active, created_at FROM users"
@@ -134,7 +134,7 @@ const getAllUsers = async (req, res) => {
 };
 
 /* ================= UPDATE USER ================= */
-const updateUsers = async (req, res) => {
+export const updateUsers = async (req, res) => {
   const { username, password } = req.body;
   const userId = req.user?.id;
 
@@ -169,10 +169,3 @@ const updateUsers = async (req, res) => {
   });
 };
 
-module.exports = {
-  signup,
-  login,
-  deleteUser,
-  getAllUsers,
-  updateUsers,
-};

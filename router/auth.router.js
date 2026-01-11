@@ -1,26 +1,27 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
 
-const {
+import {
   signup,
   login,
   deleteUser,
   getAllUsers,
   updateUsers
-} = require("../controllers/auth.controller");
+} from "../controllers/auth.controller.js";
 
-const {
+import {
   verifyToken,
   sendReq,
   isAdmin
-} = require("../middleware/authMiddleware");
+} from "../middleware/authMiddleware.js";
 
-const { verifyOtp, disableUser, enableUser } = require("../controllers/verification");
+import { verifyOtp, disableUser, enableUser } from "../controllers/verification.js";
+import { subscribePlan, getSubscriptions, getMySubscription } from "../controllers/subscription.controller.js";
 
 /* ================= AUTH ================= */
 router.post("/signup", verifyOtp(), signup);
 router.post("/login", login);
-router.delete("/delete",verifyToken, deleteUser);
+router.delete("/delete", verifyToken, deleteUser);
 router.put("/disable/:id", verifyToken, isAdmin, disableUser);
 router.put("/enable/:id", verifyToken, isAdmin, enableUser);
 
@@ -31,4 +32,11 @@ router.get("/profile", verifyToken, sendReq);
 /* ================= ADMIN ================= */
 router.get("/users", verifyToken, isAdmin, getAllUsers);
 
-module.exports = router;
+/* ================= SUBSCRIPTION ================= */
+router.post('/subscribe', verifyToken, subscribePlan);
+router.get('/subscriptions', verifyToken, getSubscriptions);
+router.get('/subscriptions/my', verifyToken, getMySubscription);
+
+
+/* 🔹 IMPORTANT: default export */
+export default router;

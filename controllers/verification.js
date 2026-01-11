@@ -1,6 +1,8 @@
-const nodemailer = require("nodemailer");
-const pool = require("../db");
-require("dotenv").config();
+import nodemailer from "nodemailer";
+import pool from "../db.js";
+import dotenv from "dotenv";
+
+dotenv.config();  // 🔹 always at top
 
 /* ================= MAIL TRANSPORT ================= */
 const transporter = nodemailer.createTransport({
@@ -15,7 +17,7 @@ const transporter = nodemailer.createTransport({
 const otpStore = {};
 
 /* ================= SEND Email OTP ================= */
-const sendEmail = async (req, res) => {
+export const sendEmail = async (req, res) => {
   const { email } = req.body;
 
   if (!email) {
@@ -50,12 +52,10 @@ const sendEmail = async (req, res) => {
 };
 
 /* ================= GENERATE OTP ================= */
-const generateOTP = () => {
-  return Math.floor(100000 + Math.random() * 900000);
-};
+const generateOTP = () => Math.floor(100000 + Math.random() * 900000);
 
 /* ================= VERIFY OTP ================= */
-const verifyOtp = (options = { respond: false }) => {
+export const verifyOtp = (options = { respond: false }) => {
   return (req, res, next) => {
     const { email, otp } = req.body;
 
@@ -91,33 +91,21 @@ const verifyOtp = (options = { respond: false }) => {
   };
 };
 
-const disableUser = async (req, res) => {
+/* ================= DISABLE USER ================= */
+export const disableUser = async (req, res) => {
   const { id } = req.params;
-  if(id==1){
-    return res.status(401).json({message:"This is Admin Account"})
+  if (id == 1) {
+    return res.status(401).json({ message: "This is Admin Account" });
   }
-  await pool.query(
-    "UPDATE users SET is_active = false WHERE id = $1",
-    [id]
-  );
 
+  await pool.query("UPDATE users SET is_active = false WHERE id = $1", [id]);
   res.json({ message: "User disabled successfully" });
 };
 
-const enableUser = async (req, res) => {
+/* ================= ENABLE USER ================= */
+export const enableUser = async (req, res) => {
   const { id } = req.params;
 
-  const result = await pool.query(
-      "UPDATE users SET is_active = true WHERE id = $1",
-      [id]
-    );
-
+  await pool.query("UPDATE users SET is_active = true WHERE id = $1", [id]);
   res.json({ message: "User enabled successfully" });
-};
-
-module.exports = {
-  sendEmail,
-  verifyOtp,
-  disableUser,
-  enableUser,
 };

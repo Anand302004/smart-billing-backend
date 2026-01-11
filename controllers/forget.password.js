@@ -1,8 +1,8 @@
-const bcrypt = require("bcrypt");
-const pool = require("../db");
+import bcrypt from "bcrypt";
+import pool from "../db.js";
 
 /* ================= CHECK USER ================= */
-const checkUser = async (req, res, next) => {
+export const checkUser = async (req, res, next) => {
   const { email } = req.body;
 
   try {
@@ -23,7 +23,7 @@ const checkUser = async (req, res, next) => {
 };
 
 /* ================= RESET PASSWORD ================= */
-const resetPassword = async (req, res) => {
+export const resetPassword = async (req, res) => {
   const { newPassword } = req.body;
   const email = req.verifiedEmail;
 
@@ -52,7 +52,3 @@ const resetPassword = async (req, res) => {
   }
 };
 
-module.exports = {
-  checkUser,
-  resetPassword,
-};

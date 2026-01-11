@@ -1,8 +1,8 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
 
-const { sendEmail, verifyOtp } = require("../controllers/verification");
-const { checkUser, resetPassword } = require("../controllers/forget.password");
+import { sendEmail, verifyOtp } from "../controllers/verification.js";
+import { checkUser, resetPassword } from "../controllers/forget.password.js";
 
 /* ================= FORGET PASSWORD ================= */
 router.post('/send-email',sendEmail)
@@ -12,4 +12,5 @@ router.post("/forget-password", checkUser, sendEmail);
 // Step 2: Verify OTP + Reset password
 router.put("/reset-password", verifyOtp(), resetPassword);
 
-module.exports = router;
+export default router;
+

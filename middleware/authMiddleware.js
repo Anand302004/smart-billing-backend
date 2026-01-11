@@ -1,7 +1,7 @@
-const jwt = require("jsonwebtoken");
+import jwt from "jsonwebtoken";
 
 /* ================= VERIFY TOKEN ================= */
-exports.verifyToken = (req, res, next) => {
+export const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -20,7 +20,7 @@ exports.verifyToken = (req, res, next) => {
 };
 
 /* ================= ADMIN CHECK ================= */
-exports.isAdmin = (req, res, next) => {
+export const isAdmin = (req, res, next) => {
   if (!req.user || req.user.role !== "admin") {
     return res.status(403).json({ message: "Admin access only" });
   }
@@ -28,7 +28,7 @@ exports.isAdmin = (req, res, next) => {
 };
 
 /* ================= TEST PROFILE ================= */
-exports.sendReq = (req, res) => {
+export const sendReq = (req, res) => {
   res.json({
     message: "Welcome to profile",
     user: req.user,
