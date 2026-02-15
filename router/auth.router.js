@@ -6,17 +6,17 @@ import {
   login,
   deleteUser,
   getAllUsers,
-  updateUsers
+  updateUsers,
+  refreshAccessToken,
+  logout
 } from "../controllers/auth.controller.js";
 
 import {
   verifyToken,
-  sendReq,
   isAdmin
 } from "../middleware/authMiddleware.js";
 
 import { verifyOtp, disableUser, enableUser } from "../controllers/verification.js";
-import { subscribePlan, getSubscriptions, getMySubscription } from "../controllers/subscription.controller.js";
 
 /* ================= AUTH ================= */
 router.post("/signup", verifyOtp(), signup);
@@ -27,15 +27,12 @@ router.put("/enable/:id", verifyToken, isAdmin, enableUser);
 
 /* ================= USER ================= */
 router.put("/update", verifyToken, updateUsers);
-router.get("/profile", verifyToken, sendReq);
 
 /* ================= ADMIN ================= */
 router.get("/users", verifyToken, isAdmin, getAllUsers);
 
-/* ================= SUBSCRIPTION ================= */
-router.post('/subscribe', verifyToken, subscribePlan);
-router.get('/subscriptions', verifyToken, getSubscriptions);
-router.get('/subscriptions/my', verifyToken, getMySubscription);
+router.post("/refresh", refreshAccessToken);
+router.post("/logout", logout);
 
 
 /* 🔹 IMPORTANT: default export */
