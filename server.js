@@ -21,7 +21,7 @@ app.use(express.json());
 app.use(cors({
   origin: [
     "http://localhost:4200",
-    "https://your-frontend.onrender.com"
+    "https://smart-billing-system.netlify.app"
   ],
   credentials: true
 }));
