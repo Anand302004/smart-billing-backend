@@ -19,9 +19,13 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 app.use(cors({
-  origin: "http://localhost:4200", // Angular URL
+  origin: [
+    "http://localhost:4200",
+    "https://your-frontend.onrender.com"
+  ],
   credentials: true
 }));
+
 app.use(cookieParser());
 
 app.get("/", (req,res)=>res.send("Server running 🚀"));
@@ -39,7 +43,8 @@ app.use("/adminDashboard", adminDashboardRoutes)
 
 const PORT = process.env.PORT || 3000;
 
+console.log("ENV PORT =", process.env.PORT);
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
