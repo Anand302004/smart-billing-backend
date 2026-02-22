@@ -7,14 +7,16 @@ dotenv.config();  // 🔹 always at top
 /* ================= MAIL TRANSPORT ================= */
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 465,
-  secure: true, // VERY IMPORTANT
+  port: 587,
+  secure: false, // 587 sathi false
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+  tls: {
+    rejectUnauthorized: false,
+  },
 });
-
 /* ================= TEMP OTP STORE ================= */
 const otpStore = {};
 
